@@ -1,0 +1,14 @@
+{
+  "name": "advent-elm",
+  "version": "1.0.0",
+  "description": "doing advent of code in elm cause raisins",
+  "main": "index.js",
+  "scripts": {
+    "start": "elm-live Main.elm --output=elm.js --open"
+  },
+  "author": "Tim Huddle <blazhen88@gmail.com>",
+  "license": "Unlicense",
+  "devDependencies": {
+    "elm-live": "^2.4.1"
+  }
+}
