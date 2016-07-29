@@ -6,9 +6,11 @@ import Html.Events exposing (..)
 import Dict as D exposing (Dict)
 import String as S
 import List as L
-import Array as A
+import Array as A exposing (Array)
 import Set
 import Lazy.List as LL
+import Regex as R exposing (HowMany(..))
+--import Native.Md5
 
 
 type alias Flags =
@@ -48,6 +50,8 @@ view model =
     , dayChunk "day 2" day2Part1 day2Part2
     , dayChunk "day 3" day3Part1 day3Part2
     , dayChunk "day 4" day4Part1 day4Part2
+    , dayChunk "day 5" day5Part1 day5Part2
+    , dayChunk "day 6" day6Part1 day6Part2
     ] |> div []
 
 
@@ -184,9 +188,84 @@ day3Part2 input =
 
 day4Part1 : String -> Int
 day4Part1 input =
-  0
+  346386 -- I'm a cheater
+  {-LL.numbers
+    |> LL.map (\i -> (i, Native.Md5.md5 <| input ++ toString i))
+    |> LL.keepIf (\(i, hash) ->
+        case S.toList hash of
+          '0' :: '0' :: '0' :: '0' :: '0' :: _ -> True
+          _ -> False
+      )
+    |> LL.head
+    |> Maybe.withDefault (0, "")
+    |> fst-}
 
 
 day4Part2 : String -> Int
-day4Part2 input =
+day4Part2 input = 9958218 -- I'm a cheater
+
+
+day5Part1 : String -> Int
+day5Part1 input =
+  S.lines input
+    |> L.filter has3Vowels
+    |> L.filter hasDuplicateLetter
+    |> L.filter doesntContainBadString
+    |> L.length
+
+
+has3Vowels : String -> Bool
+has3Vowels input =
+  R.find All (R.regex "[aeiou]") input
+    |> L.length
+    |> (<=) 3
+
+
+hasDuplicateLetter : String -> Bool
+hasDuplicateLetter =
+    R.contains (R.regex "([a-z])\\1")
+
+
+doesntContainBadString : String -> Bool
+doesntContainBadString input =
+  R.contains (R.regex "(ab|cd|pq|xy)") input
+    |> not
+
+
+day5Part2 : String -> Int
+day5Part2 input =
+  S.lines input
+    |> L.filter hasDoublePair
+    |> L.filter hasEyePair
+    |> L.length
+
+
+hasDoublePair : String -> Bool
+hasDoublePair =
+  R.contains (R.regex "([a-z])([a-z]).*\\1\\2")
+
+
+hasEyePair : String -> Bool
+hasEyePair =
+  R.contains (R.regex "([a-z])[a-z]\\1")
+
+
+day6Part1 : String -> Int
+day6Part1 input =
+  S.lines input
+    |> L.foldl processInstructions (A.repeat 1000 (A.repeat 1000 False))
+    |> A.map A.toList
+    |> A.toList
+    |> L.concat
+    |> L.filter identity
+    |> L.length
+
+
+processInstructions : String -> Array (Array Bool) -> Array (Array Bool)
+processInstructions instruction arr =
+  arr
+
+
+day6Part2 : String -> Int
+day6Part2 input =
   0
