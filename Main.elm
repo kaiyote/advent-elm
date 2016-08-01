@@ -263,9 +263,70 @@ day6Part1 input =
 
 processInstructions : String -> Array (Array Bool) -> Array (Array Bool)
 processInstructions instruction arr =
-  arr
+  let
+    ((x, y), (x', y'), func) =
+      case S.words instruction of
+        _ :: "off" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch (\_ -> False) False)
+
+        _ :: "on" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch (\_ -> True) False)
+
+        "toggle" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch not False)
+
+        _ ->
+          Debug.crash "unreachable"
+  in
+    L.concatMap (\x'' -> L.map (\y'' -> (x'', y'')) [y..y']) [x..x']
+      |> L.foldl func arr
+
+
+commaStringToTuple : String -> (Int, Int)
+commaStringToTuple input =
+  let
+    nums =
+      S.split "," input
+        |> L.map S.toInt
+        |> L.map (Result.withDefault 0)
+  in
+    (Maybe.withDefault 0 (L.head nums), Maybe.withDefault 0 (L.head (L.reverse nums)))
+
+
+switch : (a -> a) -> a -> (Int, Int) -> Array (Array a) -> Array (Array a)
+switch f default (x, y) arr =
+  A.get x arr
+    |> Maybe.withDefault A.empty
+    |> (\arr' -> A.set y (f (Maybe.withDefault default <| A.get y arr')) arr')
+    |> (\arr' -> A.set x arr' arr)
 
 
 day6Part2 : String -> Int
 day6Part2 input =
-  0
+  S.lines input
+    |> L.foldl processInstructions2 (A.repeat 1000 (A.repeat 1000 0))
+    |> A.map A.toList
+    |> A.toList
+    |> L.concat
+    |> L.sum
+
+
+processInstructions2 : String -> Array (Array Int) -> Array (Array Int)
+processInstructions2 instruction arr =
+  let
+    ((x, y), (x', y'), func) =
+      case S.words instruction of
+        _ :: "off" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch (\x -> max 0 (x - 1)) 0)
+
+        _ :: "on" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch (\x -> x + 1) 0)
+
+        "toggle" :: origin :: "through" :: endPoint :: [] ->
+          (commaStringToTuple origin, commaStringToTuple endPoint, switch (\x -> x + 2) 0)
+
+        _ ->
+          Debug.crash "unreachable"
+  in
+    L.concatMap (\x'' -> L.map (\y'' -> (x'', y'')) [y..y']) [x..x']
+      |> L.foldl func arr
