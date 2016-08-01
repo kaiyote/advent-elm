@@ -8,8 +8,9 @@ import String as S
 import List as L
 import Array as A exposing (Array)
 import Set
-import Lazy.List as LL
+import Lazy exposing (Lazy, lazy, force)
 import Regex as R exposing (HowMany(..))
+import Bitwise as B
 --import Native.Md5
 
 
@@ -52,6 +53,7 @@ view model =
     , dayChunk "day 4" day4Part1 day4Part2
     , dayChunk "day 5" day5Part1 day5Part2
     , dayChunk "day 6" day6Part1 day6Part2
+    , dayChunk "day 7" day7Part1 day7Part2
     ] |> div []
 
 
@@ -330,3 +332,100 @@ processInstructions2 instruction arr =
   in
     L.concatMap (\x'' -> L.map (\y'' -> (x'', y'')) [y..y']) [x..x']
       |> L.foldl func arr
+
+
+day7Part1 : String -> Int
+day7Part1 input =
+  S.lines input
+    |> processInput D.empty
+    |> D.get "a"
+    |> Maybe.withDefault 0
+
+
+processInput : Dict String Int -> List String -> Dict String Int
+processInput dict lines =
+  case lines of
+    [] -> dict
+    _ ->
+      let
+        dict' =
+          L.foldl processLine dict lines
+      in
+        L.filter (isNotDone dict') lines
+          |> processInput dict'
+
+
+processLine : String -> Dict String Int -> Dict String Int
+processLine line dict =
+  case S.words line of
+    "NOT" :: key' :: "->" :: key :: [] ->
+      conditionalInsert key key' B.complement dict
+
+    num :: "->" :: key :: [] ->
+      conditionalInsert key num identity dict
+
+    key' :: "AND" :: key'' :: "->" :: key :: [] ->
+      conditionalInsert2 key key' key'' B.and dict
+
+    key' :: "OR" :: key'' :: "->" :: key :: [] ->
+      conditionalInsert2 key key' key'' B.or dict
+
+    key' :: "LSHIFT" :: num :: "->" :: key :: [] ->
+      conditionalInsert2 key key' num B.shiftLeft dict
+
+    key' :: "RSHIFT" :: num :: "->" :: key :: [] ->
+      conditionalInsert2 key key' num B.shiftRight dict
+
+    _ -> dict
+
+
+conditionalInsert : String -> String -> (Int -> Int) -> Dict String Int -> Dict String Int
+conditionalInsert key lookup op dict =
+  case S.toInt lookup of
+    Ok num ->
+      D.insert key (op num) dict
+    Err _ ->
+      case D.get lookup dict of
+        Just num -> D.insert key (op num) dict
+        Nothing -> dict
+
+
+conditionalInsert2 : String -> String -> String -> (Int -> Int -> Int) -> Dict String Int -> Dict String Int
+conditionalInsert2 key lookupL lookupR op dict =
+  case S.toInt lookupL of
+    Ok num ->
+      case S.toInt lookupR of
+        Ok num' -> D.insert key (op num num') dict
+        _ ->
+          case D.get lookupR dict of
+            Just num' -> D.insert key (op num num') dict
+            Nothing -> dict
+    _ ->
+      case D.get lookupL dict of
+        Just num ->
+          case S.toInt lookupR of
+            Ok num' -> D.insert key (op num num') dict
+            _ ->
+              case D.get lookupR dict of
+                Just num' -> D.insert key (op num num') dict
+                Nothing -> dict
+        Nothing -> dict
+
+
+isNotDone : Dict String Int -> String -> Bool
+isNotDone dict line =
+  S.words line
+    |> L.reverse
+    |> L.head
+    |> Maybe.withDefault ""
+    |> flip D.get dict
+    |> (\maybe ->
+      case maybe of
+        Just _ -> False
+        Nothing -> True
+    )
+
+
+day7Part2 : String -> Int
+day7Part2 input =
+  0
