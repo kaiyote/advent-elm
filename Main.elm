@@ -54,6 +54,7 @@ view model =
     , dayChunk "day 5" day5Part1 day5Part2
     , dayChunk "day 6" day6Part1 day6Part2
     , dayChunk "day 7" day7Part1 day7Part2
+    , dayChunk "day 8" day8Part1 day8Part2
     ] |> div []
 
 
@@ -438,3 +439,53 @@ day7Part2 input =
     |> processInput (D.singleton "b" (day7Part1 input))
     |> D.get "a"
     |> Maybe.withDefault 0
+
+
+day8Part1 : String -> Int
+day8Part1 input =
+  let
+    total =
+      S.lines input
+        |> L.map S.length
+        |> L.sum
+  in
+    S.lines input
+      |> L.map getRidOfQuotes
+      |> L.map getRidOfEscapeSequences
+      |> L.map S.length
+      |> L.sum
+      |> (-) total
+
+
+getRidOfQuotes : String -> String
+getRidOfQuotes = S.slice 1 -1
+
+
+getRidOfEscapeSequences : String -> String
+getRidOfEscapeSequences line =
+  R.replace All (R.regex "\\\\\"") (\_ -> "|") line
+    |> R.replace All (R.regex "\\\\x[a-f0-9]{2}") (\_ -> "|")
+    |> R.replace All (R.regex "\\\\\\\\") (\_ -> "|")
+
+
+day8Part2 : String -> Int
+day8Part2 input =
+  let
+    total =
+      S.lines input
+        |> L.map S.length
+        |> L.sum
+  in
+    S.lines input
+      |> L.map escape
+      |> L.map S.length
+      |> L.sum
+      |> flip (-) total
+
+
+escape : String -> String
+escape line =
+  R.replace All (R.regex "\\\\\"") (\_ -> "|||\"") line
+    |> R.replace All (R.regex "\\\\x[a-f0-9]{2}") (\_ -> "||xaa")
+    |> R.replace All (R.regex "\\\\\\\\") (\_ -> "||||")
+    |> S.append "||||" -- two for the escapes for the previously outer quotes + two for the new outer quotes
