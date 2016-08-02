@@ -381,35 +381,41 @@ processLine line dict =
 
 conditionalInsert : String -> String -> (Int -> Int) -> Dict String Int -> Dict String Int
 conditionalInsert key lookup op dict =
-  case S.toInt lookup of
-    Ok num ->
-      D.insert key (op num) dict
-    Err _ ->
-      case D.get lookup dict of
-        Just num -> D.insert key (op num) dict
-        Nothing -> dict
+  case D.get key dict of
+    Nothing ->
+      case S.toInt lookup of
+        Ok num ->
+          D.insert key (op num) dict
+        Err _ ->
+          case D.get lookup dict of
+            Just num -> D.insert key (op num) dict
+            Nothing -> dict
+    _ -> dict
 
 
 conditionalInsert2 : String -> String -> String -> (Int -> Int -> Int) -> Dict String Int -> Dict String Int
 conditionalInsert2 key lookupL lookupR op dict =
-  case S.toInt lookupL of
-    Ok num ->
-      case S.toInt lookupR of
-        Ok num' -> D.insert key (op num num') dict
-        _ ->
-          case D.get lookupR dict of
-            Just num' -> D.insert key (op num num') dict
-            Nothing -> dict
-    _ ->
-      case D.get lookupL dict of
-        Just num ->
+  case D.get key dict of
+    Nothing ->
+      case S.toInt lookupL of
+        Ok num ->
           case S.toInt lookupR of
             Ok num' -> D.insert key (op num num') dict
             _ ->
               case D.get lookupR dict of
                 Just num' -> D.insert key (op num num') dict
                 Nothing -> dict
-        Nothing -> dict
+        _ ->
+          case D.get lookupL dict of
+            Just num ->
+              case S.toInt lookupR of
+                Ok num' -> D.insert key (op num num') dict
+                _ ->
+                  case D.get lookupR dict of
+                    Just num' -> D.insert key (op num num') dict
+                    Nothing -> dict
+            Nothing -> dict
+    _ -> dict
 
 
 isNotDone : Dict String Int -> String -> Bool
@@ -428,4 +434,7 @@ isNotDone dict line =
 
 day7Part2 : String -> Int
 day7Part2 input =
-  0
+  S.lines input
+    |> processInput (D.singleton "b" (day7Part1 input))
+    |> D.get "a"
+    |> Maybe.withDefault 0
