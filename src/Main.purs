@@ -1,29 +1,26 @@
 module Main where
 
-import Prelude
+import Prelude (Unit, show, (<<<), (+), (-), (==), ($), (<>))
 import Data.Either (either)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Node.FS (FS)
-import Node.Buffer (BUFFER)
 import Node.FS.Async (readTextFile)
 import Node.Encoding (Encoding(UTF8))
-import Data.String
-import Data.Array
-import Data.Foldable
+import Data.String (trim, toCharArray)
+import Data.Foldable (foldl)
 
-main :: forall e. Eff (fs :: FS, console :: CONSOLE, err :: EXCEPTION, buffer :: BUFFER | e) Unit
+main :: forall e. Eff (fs :: FS, console :: CONSOLE, err :: EXCEPTION | e) Unit
 main = do
-  log "Hello sailor!"
+  day1Part1 $ headerLog "Day 1 Part 1: "
 
+headerLog :: String -> String -> String
+headerLog header = (header <> _)
 
-day1Part1 :: forall e. Eff (fs :: FS, console :: CONSOLE, err :: EXCEPTION, buffer :: BUFFER | e) Unit
-day1Part1 = do
-  readTextFile UTF8 "./inputs/day1.txt" $ \x -> do
-    either (log <<< show) (\x' ->
-      log <<< show
-      $ sum
-      $ map (\c -> if c == '(' then 1 else -1)
-      $ toCharArray
-      $ trim x') x
+day1Part1 :: forall e. (String -> String) -> Eff (fs :: FS, console :: CONSOLE, err :: EXCEPTION | e) Unit
+day1Part1 logg = do
+  readTextFile UTF8 "./inputs/day1.txt"
+    $ either
+      (log <<< logg <<< show)
+      (log <<< logg <<< show <<< foldl (\sum c -> if c == ')' then sum - 1 else sum + 1) 0 <<< toCharArray <<< trim)
